@@ -28,7 +28,7 @@ jobs:
       - run: flutter build windows --release
 
       # 6️⃣ 上传打包结果（方便下载）
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         with:
           name: windows-build
           path: build/windows/runner/Release/
