@@ -27,8 +27,11 @@ jobs:
       # 5️⃣ 构建 Windows Release
       - run: flutter build windows --release
 
-      # 6️⃣ 上传打包结果（方便下载）
-      - uses: actions/upload-artifact@v4
+      - name: Build Output
+        run: dir build\windows\runner\Release
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
         with:
-          name: windows-build-my
-          path: windows/release/
+          name: windows-release
+          path: build/windows/runner/Release/
