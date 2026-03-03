@@ -30,5 +30,5 @@ jobs:
       # 6️⃣ 上传打包结果（方便下载）
       - uses: actions/upload-artifact@v4
         with:
-          name: windows-build
-          path: windows
+          name: windows-build-my
+          path: windows/release/

@@ -1,8 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:flutter_highlight/flutter_highlight.dart';
-import 'package:flutter_highlight/themes/github.dart';
 import 'package:window_size/window_size.dart';
 import 'store.dart';
 import 'data_entry.dart';
@@ -11,8 +9,8 @@ import 'server.dart';
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
   if (Platform.isWindows || Platform.isMacOS || Platform.isLinux) {
-    setWindowMinSize(const Size(400, 400));
-    setWindowFrame(const Rect.fromLTWH(100, 100, 800, 600));
+    setWindowMinSize(const Size(400, 600));
+    setWindowFrame(const Rect.fromLTWH(100, 100, 600, 1000));
   }
   runApp(const MyApp());
 }
@@ -284,7 +282,7 @@ class _HomePageState extends State<HomePage> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const Text(
-                    '如何发送数据：',
+                    '如何发送数据：(目前仅支持event事件)',
                     style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
                   ),
                   const SizedBox(height: 8),
@@ -427,6 +425,7 @@ class _HomePageState extends State<HomePage> {
               border:
                   OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
               isDense: true,
+              hintStyle: const TextStyle(fontSize: 16, color: Colors.grey),
             ),
             onChanged: (value) {
               setState(() {
@@ -568,7 +567,7 @@ class _HomePageState extends State<HomePage> {
                 const SizedBox(width: 4),
                 Expanded(
                   child: Text(
-                    _formatTimestamp(entry.timestamp),
+                    '${entry.displayTime} (${_formatTimestamp(entry.timestamp)})',
                     style: const TextStyle(fontSize: 13, color: Colors.grey),
                   ),
                 ),

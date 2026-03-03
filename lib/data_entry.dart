@@ -1,14 +1,17 @@
+import 'package:intl/intl.dart';
+
 class DataEntry {
   final String id;
   final String device;
   final DateTime timestamp;
   final String json;
 
-  DataEntry(
-      {required this.id,
-      required this.device,
-      required this.timestamp,
-      required this.json});
+  DataEntry({
+    required this.id,
+    required this.device,
+    required this.timestamp,
+    required this.json,
+  });
 
   Map<String, dynamic> toJson() {
     return {
@@ -26,5 +29,8 @@ class DataEntry {
       timestamp: DateTime.parse(m['timestamp'] as String),
       json: m['json'] as String,
     );
+  }
+  String get displayTime {
+    return DateFormat('yyyy-MM-dd HH:mm:ss').format(timestamp);
   }
 }
