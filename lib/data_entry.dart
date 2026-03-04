@@ -34,3 +34,19 @@ class DataEntry {
     return DateFormat('yyyy-MM-dd HH:mm:ss').format(timestamp);
   }
 }
+
+/// 设置中可以用来选择屏蔽的事件列表 ()
+final List<SetEventModel> setEventNames = [
+  SetEventModel(name:"hot_event", isChecked: false),
+  SetEventModel(name:"before_page_leave", isChecked: false),
+];
+
+// 用来设置事件屏蔽
+class SetEventModel {
+  String name;
+  bool isChecked;
+  SetEventModel({
+    required this.name,
+    this.isChecked = false,
+  });
+}
