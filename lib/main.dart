@@ -6,8 +6,11 @@ import 'home_page.dart';
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
   if (Platform.isWindows || Platform.isMacOS || Platform.isLinux) {
-    setWindowMinSize(const Size(400, 600));
-    setWindowFrame(const Rect.fromLTWH(100, 100, 600, 1000));
+    final scale = Platform.isWindows ? 2.0 : 1.0;
+    setWindowMinSize(Size(400 * scale, 600 * scale));
+    setWindowFrame(
+      Rect.fromLTWH(100 * scale, 100 * scale, 500 * scale, 1100 * scale),
+    );
   }
   runApp(const MyApp());
 }
@@ -22,6 +25,10 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         primarySwatch: Colors.indigo,
         useMaterial3: true,
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: Colors.blueAccent,
+          brightness: Brightness.light,
+        ),
       ),
       home: const HomePage(),
     );
