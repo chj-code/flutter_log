@@ -56,6 +56,7 @@ class _HomePageState extends State<HomePage> {
           onPressed: _onShowSearchTap,
         ),
         automaticallyImplyLeading: false,
+        titleSpacing: 0,
         title: isRunning
             ? Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 0),
@@ -92,13 +93,11 @@ class _HomePageState extends State<HomePage> {
             tooltip: isRunning ? '停止服务' : '启动服务',
             onPressed: isRunning ? _stopServer : _startServer,
           ),
-          const SizedBox(width: 4),
           IconButton(
             icon: const Icon(Icons.delete_forever, size: 28, color: Colors.red),
             tooltip: '清空当前设备数据',
             onPressed: store.totalCount > 0 ? _deleteCurrentDevice : null,
           ),
-          const SizedBox(width: 6),
           IconButton(
             icon: const Icon(Icons.padding, size: 28, color: Colors.black54),
             tooltip: isShowTabBar ? '隐藏tabbar' : '显示tabbar',
@@ -107,9 +106,8 @@ class _HomePageState extends State<HomePage> {
           IconButton(
             icon: const Icon(Icons.settings_sharp, size: 28),
             tooltip: "设置",
-            onPressed: _onShowTabbarTap,
+            onPressed: _onSettingsTap,
           ),
-          const SizedBox(width: 6),
         ],
       ),
       body: _buildBody(),
@@ -186,13 +184,14 @@ class _HomePageState extends State<HomePage> {
                   const Text(
                     '''{
   "event_name": "your_event",
+  "module_name": "your_module",
   "parameters": {
     "param1": "value1",
     "param2": 123
   },
   "items": [
-    {"item_id": "item1", "item_name": "Item One"},
-    {"item_id": "item2", "item_name": "Item Two"}
+    {"id": "1", "name": "One", ...},
+    {"id": "2", "name": "Two", ...}
   ]
 }''',
                     style: TextStyle(fontFamily: 'Courier', fontSize: 12),
@@ -405,7 +404,7 @@ class _HomePageState extends State<HomePage> {
     final eventName = _extractEventName(entry.json);
     final parameters = _extractParameters(payload);
     final items = _extractItems(payload);
-    final moduleName = _extractEventModelName(entry.json);
+    final moduleName = _extractModuleName(entry.json);
     return Card(
       elevation: 2,
       margin: const EdgeInsets.only(bottom: 12),
@@ -628,7 +627,7 @@ extension Controller on _HomePageState {
 
   Future<void> _startServer() async {
     try {
-      await server.start(port: 10000);
+      await server.start(port: 8090);
       final ip = await server.getLocalIp();
       isRunning = true;
       lanAddress = ip;
@@ -723,7 +722,9 @@ extension Controller on _HomePageState {
     updateData();
   }
 
-  void _onSettingsTap() {}
+  void _onSettingsTap() {
+
+  }
 }
 
 extension Data on _HomePageState {
@@ -757,16 +758,13 @@ extension Data on _HomePageState {
     return 'unknown_event';
   }
 
-  String _extractEventModelName(String json) {
+  String _extractModuleName(String json) {
     final payload = _parsePayload(json);
-    final value = payload['parameters'];
-    if (value.containsKey('module_name')) {
-      final modelName = value['module_name'];
-      if (modelName is String && modelName.isNotEmpty) {
-        return modelName;
-      }
+    final value = payload['module_name'];
+    if (value is String && value.isNotEmpty) {
+      return value;
     }
-    return '';
+    return 'unknown_module';
   }
 
   Map<String, dynamic> _extractParameters(Map<String, dynamic> payload) {
