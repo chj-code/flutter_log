@@ -9,7 +9,7 @@ void main() {
     final scale = Platform.isWindows ? 2.0 : 1.0;
     setWindowMinSize(Size(400 * scale, 600 * scale));
     setWindowFrame(
-      Rect.fromLTWH(100 * scale, 100 * scale, 500 * scale, 1100 * scale),
+      Rect.fromLTWH(100 * scale, 100 * scale, 500 * scale, 1000 * scale),
     );
   }
   runApp(const MyApp());

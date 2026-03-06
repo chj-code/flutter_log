@@ -55,7 +55,7 @@ class _HomePageState extends State<HomePage> {
       backgroundColor: Colors.white,
       appBar: AppBar(
         leading: IconButton(
-          icon: const Icon(Icons.search, size: 28),
+          icon: const Icon(Icons.search_outlined, size: 28),
           tooltip: '搜索',
           onPressed: _onShowSearchTap,
         ),
@@ -87,25 +87,40 @@ class _HomePageState extends State<HomePage> {
                   ),
                 ),
               )
-            : const Text('数据监控'),
+            : const Text('Firebase埋点'),
         elevation: 2,
         actions: [
           IconButton(
-            icon: Icon(isRunning ? Icons.stop_circle : Icons.play_circle,
-                color: isRunning ? Colors.black87 : Colors.green),
+            icon: Icon(
+              isRunning
+                  ? Icons.stop_circle_outlined
+                  : Icons.play_circle_outline,
+              color: Colors.black87,
+            ),
             iconSize: 28,
             tooltip: isRunning ? '停止服务' : '启动服务',
             onPressed: isRunning ? _stopServer : _startServer,
           ),
           IconButton(
-            icon: const Icon(Icons.delete_forever, size: 28, color: Colors.red),
+            icon: const Icon(
+              Icons.delete_outline_outlined,
+              color: Colors.black87,
+            ),
+            iconSize: 28,
             tooltip: '清空当前设备数据',
             onPressed: store.totalCount > 0 ? _deleteCurrentDevice : null,
           ),
           IconButton(
-            icon: const Icon(Icons.padding, size: 28, color: Colors.black54),
+            icon: const Icon(Icons.padding_outlined, color: Colors.black87),
             tooltip: isShowTabBar ? '隐藏tabbar' : '显示tabbar',
             onPressed: _onShowTabbarTap,
+            iconSize: 28,
+          ),
+          IconButton(
+            icon: const Icon(Icons.copy_rounded, color: Colors.black87),
+            tooltip: '复制全部',
+            onPressed: _copyAllData,
+            iconSize: 28,
           ),
           // IconButton(
           //   icon: const Icon(Icons.settings_sharp, size: 28),
@@ -885,6 +900,42 @@ extension Controller on _HomePageState {
   void _onShowTabbarTap() {
     isShowTabBar = !isShowTabBar;
     updateData();
+  }
+
+  void _copyAllData() {
+    if (selectedDevice == null) return;
+    final allData = store.entriesForDevice(selectedDevice!);
+
+    final filteredEntries = allData.where((entry) {
+      final eventName = _extractEventName(entry.json);
+      final moduleName = _extractModuleName(entry.json);
+      final matchesEventName =
+          selectedEventNames.isEmpty || selectedEventNames.contains(eventName);
+      final matchesModuleName = selectedModuleNames.isEmpty ||
+          selectedModuleNames.contains(moduleName);
+      final matchesSearch =
+          eventSearch.isEmpty || eventName.contains(eventSearch);
+
+      return matchesEventName && matchesModuleName && matchesSearch;
+    }).toList();
+    String prettyJson;
+    try {
+      final copyData = filteredEntries
+          .map((e) => {
+                'timestamp': e.timestamp.toIso8601String(),
+                'event': _parsePayload(e.json),
+              })
+          .toList();
+      prettyJson = const JsonEncoder.withIndent('  ').convert(copyData);
+    } catch (_) {
+      prettyJson = allData.toString();
+    }
+    Clipboard.setData(ClipboardData(text: prettyJson));
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('复制成功')),
+      );
+    }
   }
 
   void _onSettingsTap() {
