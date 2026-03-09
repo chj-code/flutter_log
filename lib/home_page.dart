@@ -9,6 +9,15 @@ import 'package:flutter_highlight/flutter_highlight.dart';
 
 bool get isDesktop => Platform.isIOS || Platform.isAndroid ? false : true;
 
+enum SearchType {
+  eventCategory('event_category'),
+  eventAction('event_action'),
+  eventLabel('event_label');
+
+  final String field;
+  const SearchType(this.field);
+}
+
 class HomePage extends StatefulWidget {
   const HomePage({Key? key}) : super(key: key);
 
@@ -26,6 +35,7 @@ class _HomePageState extends State<HomePage> {
   String eventSearch = '';
   bool isShowSearch = false;
   bool isShowTabBar = true;
+  SearchType searchType = SearchType.eventCategory;
 
   Set<String> selectedEventNames = {};
   Set<String> selectedModuleNames = {};
@@ -325,22 +335,51 @@ class _HomePageState extends State<HomePage> {
 
   Widget _buildEventSearchBar() {
     if (isShowSearch == false) return const SizedBox.shrink();
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
-      child: TextField(
-        controller: _eventSearchController,
-        decoration: InputDecoration(
-          prefixIcon: const Icon(Icons.search),
-          hintText: '搜索 event_name',
-          border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-          isDense: true,
-          hintStyle: const TextStyle(fontSize: 16, color: Colors.grey),
-        ),
-        onChanged: (value) {
-          setState(() {
-            eventSearch = value.trim();
-          });
-        },
+    return Container(
+      margin: const EdgeInsets.all(8),
+      padding: const EdgeInsets.all(5),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: Colors.black87),
+      ),
+      child: Row(
+        children: [
+          DropdownButton<SearchType>(
+            value: searchType,
+            dropdownColor: Colors.white,
+            padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 0),
+            items: SearchType.values.map((type) {
+              return DropdownMenuItem(
+                value: type,
+                child: Text(type.field, style: const TextStyle(fontSize: 14)),
+              );
+            }).toList(),
+            onChanged: (value) {
+              if (value != null) {
+                setState(() {
+                  searchType = value;
+                });
+              }
+            },
+          ),
+          const SizedBox(width: 6),
+          Expanded(
+            child: TextField(
+              controller: _eventSearchController,
+              decoration: InputDecoration(
+                hintText: '搜索 ${searchType.field}',
+                border: InputBorder.none,
+                isDense: true,
+                hintStyle: const TextStyle(fontSize: 16, color: Colors.grey),
+              ),
+              onChanged: (value) {
+                setState(() {
+                  eventSearch = value.trim();
+                });
+              },
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -457,7 +496,7 @@ class _HomePageState extends State<HomePage> {
           eventNames.isEmpty || eventNames.contains(eventName);
       final matchesModuleName =
           moduleNames.isEmpty || moduleNames.contains(moduleName);
-      final matchesSearch = search.isEmpty || eventName.contains(search);
+      final matchesSearch = _matchesSearch(entry.json, search);
 
       return matchesEventName && matchesModuleName && matchesSearch;
     }).toList();
@@ -693,13 +732,10 @@ class _HomePageState extends State<HomePage> {
                     Padding(
                       padding:
                           const EdgeInsets.only(top: 3, bottom: 3, left: 15),
-                      child: SelectableText(
+                      child: _buildHighlightedValue(
+                        entry.key,
                         _stringifyValue(entry.value),
-                        style: const TextStyle(
-                          fontSize: 13,
-                          color: Colors.blueAccent,
-                          fontWeight: FontWeight.w500,
-                        ),
+                        eventSearch,
                       ),
                     ),
                   ],
@@ -913,8 +949,7 @@ extension Controller on _HomePageState {
           selectedEventNames.isEmpty || selectedEventNames.contains(eventName);
       final matchesModuleName = selectedModuleNames.isEmpty ||
           selectedModuleNames.contains(moduleName);
-      final matchesSearch =
-          eventSearch.isEmpty || eventName.contains(eventSearch);
+      final matchesSearch = _matchesSearch(entry.json, eventSearch);
 
       return matchesEventName && matchesModuleName && matchesSearch;
     }).toList();
@@ -948,11 +983,60 @@ extension Controller on _HomePageState {
 }
 
 extension Data on _HomePageState {
+  bool _matchesSearch(String json, String search) {
+    if (search.isEmpty) return true;
+    final payload = _parsePayload(json);
+    final params = _extractParameters(payload);
+    final value = params[searchType.field];
+    if (value == null) return false;
+    return value.toString().contains(search);
+  }
+
+  Widget _buildHighlightedValue(String key, String value, String search) {
+    if (search.isEmpty || key != searchType.field || !value.contains(search)) {
+      return SelectableText(
+        value,
+        style: const TextStyle(
+          fontSize: 13,
+          color: Colors.blueAccent,
+          fontWeight: FontWeight.w500,
+        ),
+      );
+    }
+
+    final parts = value.split(search);
+    final spans = <TextSpan>[];
+    for (int i = 0; i < parts.length; i++) {
+      if (parts[i].isNotEmpty) {
+        spans.add(TextSpan(text: parts[i]));
+      }
+      if (i < parts.length - 1) {
+        spans.add(TextSpan(
+          text: search,
+          style: const TextStyle(
+            backgroundColor: Colors.red,
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+          ),
+        ));
+      }
+    }
+
+    return SelectableText.rich(
+      TextSpan(children: spans),
+      style: const TextStyle(
+        fontSize: 13,
+        color: Colors.blueAccent,
+        fontWeight: FontWeight.w500,
+      ),
+    );
+  }
+
   Map<String, int> _collectEventCounts(List<DataEntry> entries, String search) {
     final Map<String, int> counts = {};
     for (var entry in entries) {
       final name = _extractEventName(entry.json);
-      if (search.isEmpty || name.contains(search)) {
+      if (_matchesSearch(entry.json, search)) {
         counts[name] = (counts[name] ?? 0) + 1;
       }
     }
@@ -964,8 +1048,7 @@ extension Data on _HomePageState {
     final Map<String, int> counts = {};
     for (var entry in entries) {
       final moduleName = _extractModuleName(entry.json);
-      final eventName = _extractEventName(entry.json);
-      if (search.isEmpty || eventName.contains(search)) {
+      if (_matchesSearch(entry.json, search)) {
         counts[moduleName] = (counts[moduleName] ?? 0) + 1;
       }
     }
